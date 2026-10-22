@@ -1,0 +1,160 @@
+<Activity x:Class="Main" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" mc:Ignorable="sap">
+  <Sequence DisplayName="Student Data Processing">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="outputFilePath" />
+    </Sequence.Variables>
+    <ui:InvokeCode DisplayName="Build and Validate Student Workbook" Language="CSharp">
+      <ui:InvokeCode.Code><![CDATA[
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
+using System.Security;
+using System.Text;
+
+var data = new List<object[]>
+{
+    new object[] {"Ahmed", "Mahmoud", 73, 51, 94, 67, 91},
+    new object[] {"Mohamed", "Ahmed", 97, 90, 83, 76, 69},
+    new object[] {"Mahmoud", "Ahmed", 18, 75, 68, 61, 54},
+    new object[] {"Ali", "Mohamed", 3, 15, 53, 46, 39},
+    new object[] {"Omar", "Khaled", 8, 20, 58, 51, 44},
+    new object[] {"Kareem", "Mohamed", 87, 80, 73, 66, 59},
+    new object[] {"Youssef", "Khaled", 92, 90, 83, 76, 69},
+    new object[] {"Ashraf", "Mohamed", 13, 25, 63, 56, 49},
+    new object[] {"Khaled", "Hamdi", 99, 63, 70, 91, 82},
+    new object[] {"Hussien", "Ahmad", 45, 80, 75, 48, 90},
+    new object[] {"Hend", "Hassan", 75, 90, 85, 93, 90},
+    new object[] {"Yasmin", "Medhat", 65, 70, 74, 80, 90},
+    new object[] {"Ahmad", "Abd-Elrahman", 44, 47, 69, 79, 80},
+    new object[] {"Khaled", "Hassan", 55, 79, 80, 86, 94}
+};
+
+var rows = new List<object[]>();
+foreach (object[] source in data)
+{
+    int total = 0;
+    int below50 = 0;
+    for (int i = 2; i <= 6; i++)
+    {
+        int score = Convert.ToInt32(source[i], CultureInfo.InvariantCulture);
+        total += score;
+        if (score < 50) below50++;
+    }
+    string result = total >= 250 && below50 < 2 ? "Pass" : "Fail";
+    string grade = total >= 425 ? "A" : total >= 375 ? "B" : total >= 325 ? "C" : "D";
+    rows.Add(new object[] { source[0], source[1], source[2], source[3], source[4], source[5], source[6], total, result, grade });
+}
+
+var pass = rows.Where(r => (string)r[8] == "Pass").ToList();
+var fail = rows.Where(r => (string)r[8] == "Fail").ToList();
+if (rows.Count != 14 || pass.Count != 9 || fail.Count != 5)
+    throw new InvalidOperationException("Validation failed: expected 14 students, 9 Pass, and 5 Fail.");
+if ((string)rows.Single(r => (string)r[0] == "Hussien")[8] != "Fail")
+    throw new InvalidOperationException("Validation failed for Hussien Ahmad.");
+if ((string)rows.Single(r => (string)r[0] == "Ahmad" && (string)r[1] == "Abd-Elrahman")[8] != "Fail")
+    throw new InvalidOperationException("Validation failed for Ahmad Abd-Elrahman.");
+if ((string)rows.Single(r => (string)r[0] == "Hend")[9] != "A")
+    throw new InvalidOperationException("Validation failed for Hend Hassan grade.");
+
+Func<string, string> escape = value => SecurityElement.Escape(value ?? string.Empty);
+Func<int, string> columnName = index =>
+{
+    string result = string.Empty;
+    while (index > 0)
+    {
+        int remainder = (index - 1) % 26;
+        result = ((char)('A' + remainder)).ToString() + result;
+        index = (index - 1) / 26;
+    }
+    return result;
+};
+Func<string, string, bool, string> cell = (reference, value, numeric) => numeric
+    ? "<c r=\"" + reference + "\"><v>" + escape(value) + "</v></c>"
+    : "<c r=\"" + reference + "\" t=\"inlineStr\"><is><t xml:space=\"preserve\">" + escape(value) + "</t></is></c>";
+Func<List<string>, List<object[]>, bool, string> worksheet = (headers, records, includeGrade) =>
+{
+    var xml = new StringBuilder("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>");
+    xml.Append("<row r=\"1\">");
+    for (int c = 0; c < headers.Count; c++) xml.Append(cell(columnName(c + 1) + "1", headers[c], false));
+    xml.Append("</row>");
+    for (int r = 0; r < records.Count; r++)
+    {
+        object[] row = records[r];
+        int rowNumber = r + 2;
+        int valueCount = includeGrade ? 10 : 9;
+        xml.Append("<row r=\"" + rowNumber.ToString(CultureInfo.InvariantCulture) + "\">");
+        for (int c = 0; c < valueCount; c++)
+        {
+            bool numeric = c >= 2 && c <= 7;
+            string value = Convert.ToString(row[c], CultureInfo.InvariantCulture);
+            xml.Append(cell(columnName(c + 1) + rowNumber.ToString(CultureInfo.InvariantCulture), value, numeric));
+        }
+        xml.Append("</row>");
+    }
+    xml.Append("</sheetData></worksheet>");
+    return xml.ToString();
+};
+Action<ZipArchive, string, string> addEntry = (archive, name, content) =>
+{
+    ZipArchiveEntry entry = archive.CreateEntry(name, CompressionLevel.Fastest);
+    using (var writer = new StreamWriter(entry.Open(), new UTF8Encoding(false))) writer.Write(content);
+};
+
+var studentHeaders = new List<string> {"FirstName", "LastName", "Sub1", "Sub2", "Sub3", "Sub4", "Sub5", "Total", "Result"};
+var passHeaders = new List<string> {"FirstName", "LastName", "Sub1", "Sub2", "Sub3", "Sub4", "Sub5", "Total", "Result", "Grade"};
+string filePath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "StudentData_Final.xlsx"));
+string contentTypes = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/xl/workbook.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml\"/><Override PartName=\"/xl/worksheets/sheet1.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/><Override PartName=\"/xl/worksheets/sheet2.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/><Override PartName=\"/xl/worksheets/sheet3.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml\"/></Types>";
+string packageRels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>";
+string workbook = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets><sheet name=\"Students\" sheetId=\"1\" r:id=\"rId1\"/><sheet name=\"Pass\" sheetId=\"2\" r:id=\"rId2\"/><sheet name=\"Fail\" sheetId=\"3\" r:id=\"rId3\"/></sheets></workbook>";
+string workbookRels = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet3.xml\"/></Relationships>";
+using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
+{
+    addEntry(archive, "[Content_Types].xml", contentTypes);
+    addEntry(archive, "_rels/.rels", packageRels);
+    addEntry(archive, "xl/workbook.xml", workbook);
+    addEntry(archive, "xl/_rels/workbook.xml.rels", workbookRels);
+    addEntry(archive, "xl/worksheets/sheet1.xml", worksheet(studentHeaders, rows, false));
+    addEntry(archive, "xl/worksheets/sheet2.xml", worksheet(passHeaders, pass, true));
+    addEntry(archive, "xl/worksheets/sheet3.xml", worksheet(studentHeaders, fail, false));
+}
+outputFilePath = filePath;
+      ]]></ui:InvokeCode.Code>
+      <ui:InvokeCode.Arguments>
+        <scg:Dictionary x:TypeArguments="x:String, Argument">
+          <OutArgument x:TypeArguments="x:String" x:Key="outputFilePath">[outputFilePath]</OutArgument>
+        </scg:Dictionary>
+      </ui:InvokeCode.Arguments>
+    </ui:InvokeCode>
+    <ui:InvokeCode DisplayName="Email Validated Workbook" Language="CSharp">
+      <ui:InvokeCode.Code><![CDATA[
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+
+if (string.IsNullOrWhiteSpace(outputFilePath) || !File.Exists(outputFilePath))
+    throw new FileNotFoundException("The validated workbook was not found.", outputFilePath);
+Type outlookType = Type.GetTypeFromProgID("Outlook.Application");
+if (outlookType == null)
+    throw new InvalidOperationException("Microsoft Outlook is not available. Configure a UiPath Outlook 365 or SMTP mail activity for this step.");
+dynamic outlook = Activator.CreateInstance(outlookType);
+dynamic mail = outlook.CreateItem(0);
+mail.To = "karim.seddik7@gmail.com";
+mail.Subject = "Student Data Processing - Final Excel Output";
+mail.Body = "Attached is the processed student data workbook.";
+mail.Attachments.Add(outputFilePath);
+mail.Send();
+try { Marshal.ReleaseComObject(mail); } catch { }
+try { Marshal.ReleaseComObject(outlook); } catch { }
+      ]]></ui:InvokeCode.Code>
+      <ui:InvokeCode.Arguments>
+        <scg:Dictionary x:TypeArguments="x:String, Argument">
+          <InArgument x:TypeArguments="x:String" x:Key="outputFilePath">[outputFilePath]</InArgument>
+        </scg:Dictionary>
+      </ui:InvokeCode.Arguments>
+    </ui:InvokeCode>
+  </Sequence>
+</Activity>

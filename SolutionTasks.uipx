@@ -1,0 +1,12 @@
+{
+  "DocVersion": "1.0.0",
+  "StudioMinVersion": "2025.04.0",
+  "SolutionId": "feabf5ff-27d1-4365-b6d4-a2b701b5fece",
+  "Projects": [
+    {
+      "Type": "Process",
+      "ProjectRelativePath": "Task1/project.uiproj",
+      "Id": "23be0bdf-2029-49c4-91b7-bfd6a79d6e81"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "AnalyzeResult": {
+    "Messages": [
+      {
+        "ErrorCode": "ST-USG-010",
+        "Description": "Dependency package PdfPig is not used.",
+        "RuleName": "Unused Dependencies",
+        "Item": {
+          "Name": "PdfPig",
+          "Type": "Dependency"
+        },
+        "ErrorSeverity": "Warning",
+        "Recommendation": "Remove unused packages in order to improve process execution time. [Learn more.](https://docs.uipath.com//studio/standalone/latest/user-guide/st-usg-010)",
+        "DocumentationLink": "https://docs.uipath.com//studio/standalone/latest/user-guide/st-usg-010"
+      },
+      {
+        "ErrorCode": "ST-ANA-003",
+        "Description": "Expand to see details",
+        "RuleName": "Project Workflow Count",
+        "FilePath": "project.json",
+        "ErrorSeverity": "Info",
+        "Recommendation": "Project workflow count:\r\n* Totals: 1 Folders and 1 workflows\r\n",
+        "DocumentationLink": "https://docs.uipath.com//studio/standalone/latest/user-guide/st-ana-003"
+      },
+      {
+        "ErrorCode": "ST-USG-034",
+        "Description": "Your organization requires your project to have an Automation Hub URL defined.",
+        "RuleName": "Automation Hub URL",
+        "ErrorSeverity": "Warning",
+        "Recommendation": "Use \u0022Project Settings\u0022 to add the missing information. [Learn more.](https://docs.uipath.com//studio/standalone/latest/user-guide/st-usg-034)",
+        "DocumentationLink": "https://docs.uipath.com//studio/standalone/latest/user-guide/st-usg-034"
+      },
+      {
+        "ErrorCode": "ST-ANA-009",
+        "Description": "Expand to see details",
+        "RuleName": "File Activities Stats",
+        "FilePath": "C:\\Users\\Asus\\Documents\\UiPath\\SolutionTasks\\Task2\\Main.xaml",
+        "ErrorSeverity": "Info",
+        "Recommendation": "Activities: 2",
+        "DocumentationLink": "https://docs.uipath.com//studio/standalone/latest/user-guide/st-ana-009"
+      }
+    ],
+    "MetadataMessages": []
+  }
+}

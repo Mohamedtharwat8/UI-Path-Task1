@@ -1,0 +1,6 @@
+{
+  "Name": "Task2",
+  "ProjectType": "Process",
+  "Description": "PDF Classification and Reporting",
+  "MainFile": "Main.xaml"
+}

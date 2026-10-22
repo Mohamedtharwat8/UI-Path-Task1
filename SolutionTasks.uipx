@@ -7,6 +7,11 @@
       "Type": "Process",
       "ProjectRelativePath": "Task1/project.uiproj",
       "Id": "23be0bdf-2029-49c4-91b7-bfd6a79d6e81"
+    },
+    {
+      "Type": "Process",
+      "ProjectRelativePath": "Task2/project.uiproj",
+      "Id": "6c5f6a91-6a73-4be1-96d4-5f9b04d9b27e"
     }
   ]
 }

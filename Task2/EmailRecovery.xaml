@@ -1,0 +1,38 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="EmailRecovery" sap2010:WorkflowViewState.IdRef="ActivityBuilder_1" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>GlobalConstantsNamespace</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>System</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Collections.ObjectModel</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.ObjectModel</AssemblyReference>
+      <AssemblyReference>System.ComponentModel.TypeConverter</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="Task2 - Email Recovery Preparation" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="summary" />
+    </Sequence.Variables>
+    <sap:WorkflowViewStateService.ViewState>
+      <scg:Dictionary x:TypeArguments="x:String, x:Object">
+        <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+      </scg:Dictionary>
+    </sap:WorkflowViewStateService.ViewState>
+    <ui:InvokeCode ContinueOnError="{x:Null}" Code="const bool sendEmail = false; const string recipient = &quot;m.tharwat897@gmail.com&quot;; const string subject = &quot;PDF Classification Report - 22/10/2026&quot;; const string inputFolder = @&quot;C:\Users\Asus\AppData\Local\Temp\uipath-autopilot\attachments\495296e3-1c61-4b50-8904-2e2cdfe2c947&quot;; string invoicesFolder = System.IO.Path.Combine(inputFolder, &quot;Invoices&quot;); string contractsFolder = System.IO.Path.Combine(inputFolder, &quot;Contracts&quot;); string unclassifiedFolder = System.IO.Path.Combine(inputFolder, &quot;Unclassified&quot;); if (!System.IO.Directory.Exists(inputFolder)) throw new System.IO.DirectoryNotFoundException(&quot;Task2 input folder was not found: &quot; + inputFolder); if (!System.IO.Directory.Exists(invoicesFolder) || !System.IO.Directory.Exists(contractsFolder) || !System.IO.Directory.Exists(unclassifiedFolder)) throw new System.IO.DirectoryNotFoundException(&quot;One or more classification destination folders are missing.&quot;); int rootPdfCount = System.IO.Directory.GetFiles(inputFolder, &quot;*.pdf&quot;, System.IO.SearchOption.TopDirectoryOnly).Length; int invoiceCount = System.IO.Directory.GetFiles(invoicesFolder, &quot;*.pdf&quot;, System.IO.SearchOption.TopDirectoryOnly).Length; int contractCount = System.IO.Directory.GetFiles(contractsFolder, &quot;*.pdf&quot;, System.IO.SearchOption.TopDirectoryOnly).Length; int unclassifiedCount = System.IO.Directory.GetFiles(unclassifiedFolder, &quot;*.pdf&quot;, System.IO.SearchOption.TopDirectoryOnly).Length; if (rootPdfCount != 2 || invoiceCount != 2 || contractCount != 2 || unclassifiedCount != 1) throw new System.InvalidOperationException(&quot;Recovery verification failed. Expected root=2, Invoices=2, Contracts=2, Unclassified=1; found root=&quot; + rootPdfCount.ToString() + &quot;, Invoices=&quot; + invoiceCount.ToString() + &quot;, Contracts=&quot; + contractCount.ToString() + &quot;, Unclassified=&quot; + unclassifiedCount.ToString() + &quot;.&quot;); string report = &quot;Hello,&quot; + System.Environment.NewLine + System.Environment.NewLine + &quot;The PDF classification process has completed successfully.&quot; + System.Environment.NewLine + System.Environment.NewLine + &quot;Invoice count: 2&quot; + System.Environment.NewLine + &quot;Contract count: 2&quot; + System.Environment.NewLine + &quot;Unclassified count: 1&quot; + System.Environment.NewLine + &quot;Total processed files: 5&quot; + System.Environment.NewLine + &quot;Excluded assignment briefs: 2&quot; + System.Environment.NewLine + &quot;Successful moves: 5&quot; + System.Environment.NewLine + System.Environment.NewLine + &quot;The classified documents were moved to their respective destination folders.&quot; + System.Environment.NewLine + System.Environment.NewLine + &quot;RPA Bot&quot;; if (sendEmail) { System.Type outlookType = System.Type.GetTypeFromProgID(&quot;Outlook.Application&quot;); if (outlookType == null) throw new System.InvalidOperationException(&quot;Microsoft Outlook is not available for the configured email recovery.&quot;); dynamic outlook = System.Activator.CreateInstance(outlookType); dynamic mail = outlook.CreateItem(0); mail.To = recipient; mail.Subject = subject; mail.Body = report; mail.Send(); } summary = &quot;Email recovery prepared; sendEmail=&quot; + sendEmail.ToString() + System.Environment.NewLine + &quot;To: &quot; + recipient + System.Environment.NewLine + &quot;Subject: &quot; + subject + System.Environment.NewLine + System.Environment.NewLine + report;" DisplayName="Verify Results and Prepare Email" sap2010:WorkflowViewState.IdRef="InvokeCode_1" Language="CSharp">
+      <ui:InvokeCode.Arguments>
+        <OutArgument x:TypeArguments="x:String" x:Key="summary">[summary]</OutArgument>
+      </ui:InvokeCode.Arguments>
+    </ui:InvokeCode>
+    <ui:LogMessage DisplayName="Log Prepared Email" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Info" Message="[summary]" />
+  </Sequence>
+</Activity>
